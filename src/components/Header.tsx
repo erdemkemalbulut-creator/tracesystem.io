@@ -73,6 +73,13 @@ function Header({
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
             <button
+              onClick={() => navigate('/dashboard')}
+              className="theme-toggle"
+              aria-label="Dashboard"
+            >
+              <HeaderIcons.Dashboard size={18} aria-hidden="true" />
+            </button>
+            <button
               onClick={() => navigate(`/day/${Math.min(getDayNumber(), 30)}`)}
               className="theme-toggle"
               aria-label="Review entry"

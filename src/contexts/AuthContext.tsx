@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase, type Profile } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      captureError(error, 'fetchProfile');
       return null;
     }
 

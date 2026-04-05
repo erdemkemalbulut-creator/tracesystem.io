@@ -1,73 +1,107 @@
-# React + TypeScript + Vite
+# Trace System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A 30-day self-awareness journaling platform. Users complete daily entries across four dimensions -- awareness, alignment, integrity, and reflection -- with structured checkpoints at days 7, 14, 21, and 30.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend:** React 19 + TypeScript + Vite
+- **Backend:** Supabase (PostgreSQL + Auth + Row Level Security)
+- **Routing:** React Router DOM
+- **Icons:** Lucide React
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js 18+
+- npm
+- A [Supabase](https://supabase.com) project
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Setup
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Clone the repository
+git clone https://github.com/erdemkemalbulut-creator/tracesystem.io.git
+cd tracesystem.io
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Install dependencies
+npm install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Copy environment variables and fill in your Supabase credentials
+cp .env.example .env.local
+
+# Run database migrations via Supabase CLI (if using local Supabase)
+# npx supabase db push
+
+# Start the development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous/public key |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint |
+
+## Project Structure
+
 ```
+src/
+  pages/              # Page components (26 pages)
+    onboarding/       # 7-step onboarding flow
+    articles/         # Educational content
+  components/         # Shared components (Header, Footer, ProtectedRoute)
+  contexts/           # AuthContext (user + profile state)
+  lib/                # Supabase client and TypeScript interfaces
+  utils/              # Helpers (localStorage, day calculation, questions)
+  ui/                 # Custom icon components
+  index.css           # Global styles
+  App.tsx             # Router and provider setup
+supabase/
+  migrations/         # 12 SQL migration files
+```
+
+## User Flow
+
+1. **Home** -- Marketing/landing page
+2. **Auth** -- Login or sign up
+3. **Onboarding** -- 7-step guided setup, initializes first season
+4. **Daily Entry** -- Log awareness, alignment, integrity, and reflection (days 1-30)
+5. **Checkpoints** -- Structured reflections at days 7, 14, 21, and 30
+6. **Season Closure** -- End-of-season review, option to start a new season
+7. **Settings** -- View past seasons and archived entries
+
+## Deployment
+
+This is a static SPA. Deploy to any static hosting provider:
+
+- **Vercel:** `vercel --prod` (see `vercel.json` for SPA routing config)
+- **Netlify:** Connect repo and set build command to `npm run build`, publish directory to `dist`
+
+Make sure to set the environment variables in your hosting provider's dashboard.
+
+## Database
+
+The Supabase schema includes:
+
+- **profiles** -- User profile with onboarding and checkpoint state
+- **onboarding_data** -- Answers from the onboarding flow
+- **seasons** -- 30-day season tracking per user
+- **daily_entries** -- Daily journal entries (unique per user/season/day)
+- **weekly_reflections** -- Weekly reflection entries
+
+All tables use Row Level Security (RLS) to isolate user data.
+
+## License
+
+Private

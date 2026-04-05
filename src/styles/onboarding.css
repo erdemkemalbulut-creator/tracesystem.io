@@ -1,0 +1,240 @@
+/* Onboarding flow screens */
+
+/* Step indicator */
+
+.step-indicator {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.step-indicator__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.step-indicator__dot--completed {
+  background: var(--color-accent-blue);
+}
+
+.step-indicator__dot--current {
+  background: var(--color-accent-blue);
+  box-shadow: 0 0 8px var(--color-accent-glow), 0 0 16px var(--color-accent-glow);
+  transform: scale(1.25);
+}
+
+/* Celebration screen */
+
+.celebration-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  min-height: 60vh;
+  text-align: center;
+  animation: fade-in 600ms ease-out;
+}
+
+.celebration-screen h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.celebration-screen p {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.onboarding-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 560px;
+}
+
+.cta-assurance {
+  margin-top: 0.5rem;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.4;
+  opacity: 0.55;
+}
+
+[data-theme="dark"] .cta-assurance {
+  opacity: 0.6;
+}
+
+.acknowledgment-clarifier {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-subtle);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.onboarding-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--color-text-tertiary);
+}
+
+.context-section {
+  margin-top: 0;
+  padding: 20px 0 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  max-width: 560px;
+}
+
+@media (min-width: 560px) {
+  .context-section {
+    padding: 24px 0 96px;
+  }
+}
+
+.onboarding-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.onboarding-prompt label {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-statement {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.statement {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.subtext {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.onboarding-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.onboarding-bullets ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+}
+
+.onboarding-bullets li {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.onboarding-bullets li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--color-text-muted);
+}
+
+.footer-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.about-link {
+  display: block;
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: var(--color-text-subtle);
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.about-link:hover {
+  color: var(--color-text-muted);
+}
+
+.context-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+}
+
+@media (min-width: 520px) {
+  .context-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+.context-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1.35;
+  min-height: 44px;
+}
+
+@media (min-width: 560px) {
+  .context-card {
+    padding: 16px;
+    font-size: 15px;
+  }
+}
+
+.context-card:hover {
+  border-color: var(--color-border-muted);
+  background: var(--color-bg-tertiary);
+}
+
+.context-card:focus-visible {
+  outline: 2px solid var(--color-border-hover);
+  outline-offset: 2px;
+}
+
+.context-card:active {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-tertiary);
+}

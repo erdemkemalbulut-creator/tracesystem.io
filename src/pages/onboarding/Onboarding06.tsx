@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import StepIndicator from '../../components/StepIndicator';
 
 export default function Onboarding06() {
   const { updateProfile, profile, user } = useAuth();
@@ -37,6 +38,7 @@ export default function Onboarding06() {
         ← Back
       </button>
       <div className="onboarding-screen">
+        <StepIndicator current={6} total={7} />
         <div className="onboarding-prompt">
           <label>
             For the next 30 days, are you willing to observe your actions — even when it's uncomfortable — without trying to fix them?

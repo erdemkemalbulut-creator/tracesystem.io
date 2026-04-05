@@ -1,4 +1,4 @@
-import { Eye, Navigation, ShieldCheck, FileText, Info, Compass, CalendarDays, BookOpen, Settings, Archive, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, Navigation, ShieldCheck, FileText, Info, Compass, CalendarDays, BookOpen, Settings, Archive, ArrowLeft, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
 
 const SECTION_ICONS = {
   Awareness: Eye,
@@ -41,6 +41,7 @@ export const HeaderIcons = {
   Settings,
   Archive,
   Review: FileText,
+  Dashboard: BarChart3,
   Back: ArrowLeft,
   ChevronDown,
   ChevronUp,

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 
 type ReflectionStep = 'intro' | 'question1' | 'question2' | 'question3' | 'complete';
 
@@ -113,7 +114,7 @@ export default function WeekReflection() {
 
       setStep('complete');
     } catch (error) {
-      console.error('Error saving reflection:', error);
+      captureError(error, 'saveWeeklyReflection');
     } finally {
       setLoading(false);
     }

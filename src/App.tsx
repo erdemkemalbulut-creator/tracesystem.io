@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import OnboardingRouter from './pages/onboarding/OnboardingRouter';
@@ -18,11 +19,13 @@ import WhyTraceExists from './pages/articles/WhyTraceExists';
 import BehaviorFollowsIdentity from './pages/articles/BehaviorFollowsIdentity';
 import WhyMotivationFails from './pages/articles/WhyMotivationFails';
 import AvoidanceAndStakes from './pages/articles/AvoidanceAndStakes';
+import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <ScrollToTop />
       <AuthProvider>
@@ -80,10 +83,19 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -1,0 +1,214 @@
+/* Glass morphism, animations, transitions, scroll-reveal */
+
+/* Glass */
+
+.glass {
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.glass-card {
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--glass-hover-border);
+}
+
+.glass-elevated {
+  box-shadow:
+    0 0 20px var(--color-accent-glow),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px var(--color-accent-glow);
+}
+
+/* Keyframe animations */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-check {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--color-accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--color-accent-glow), 0 0 40px var(--color-accent-glow);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-circumference); }
+  to { stroke-dashoffset: var(--ring-offset); }
+}
+
+@keyframes celebration-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+/* Page transition */
+
+.page-transition {
+  animation: slide-up 400ms ease-out both;
+}
+
+/* Scroll reveal */
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children animations */
+
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 80ms; }
+.stagger > *:nth-child(3) { animation-delay: 160ms; }
+.stagger > *:nth-child(4) { animation-delay: 240ms; }
+
+/* Animated checkbox */
+
+.animated-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.animated-checkbox:hover {
+  background: none;
+  border: none;
+  transform: none;
+}
+
+.animated-checkbox__box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--color-border-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.animated-checkbox--checked .animated-checkbox__box {
+  background: var(--color-accent-gradient);
+  border-color: transparent;
+}
+
+.animated-checkbox--animating .animated-checkbox__box {
+  animation: scale-check 400ms ease-out, glow-pulse 600ms ease-out;
+}
+
+.animated-checkbox__icon {
+  color: #fff;
+  animation: scale-check 300ms ease-out;
+}
+
+.animated-checkbox__label {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+
+/* Skeleton loading */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-bg-secondary) 50%,
+    var(--color-bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: none; }
+  }
+
+  @keyframes scale-check {
+    0%, 100% { transform: scale(1); }
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0 0; }
+  }
+}

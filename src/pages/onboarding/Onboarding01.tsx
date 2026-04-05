@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import StepIndicator from '../../components/StepIndicator';
 
 export default function Onboarding01() {
   const { updateProfile, profile } = useAuth();
@@ -15,6 +16,7 @@ export default function Onboarding01() {
   return (
     <div className="page">
       <div className="onboarding-screen">
+        <StepIndicator current={1} total={7} />
         <h1>Before you begin</h1>
         <div className="onboarding-body">
           <p>

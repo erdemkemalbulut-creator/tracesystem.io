@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import StepIndicator from '../../components/StepIndicator';
 
 export default function Onboarding07() {
   const { updateProfile, user } = useAuth();
@@ -76,6 +77,7 @@ export default function Onboarding07() {
         ← Back
       </button>
       <div className="onboarding-screen">
+        <StepIndicator current={7} total={7} />
         <h1>This is the season you're entering.</h1>
         <div className="onboarding-statement">
           <p className="statement">

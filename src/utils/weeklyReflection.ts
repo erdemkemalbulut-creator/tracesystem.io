@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 
 export async function isWeeklyReflectionDue(userId: string): Promise<boolean> {
   try {
@@ -56,7 +57,7 @@ export async function isWeeklyReflectionDue(userId: string): Promise<boolean> {
 
     return !existing;
   } catch (error) {
-    console.error('Error checking weekly reflection:', error);
+    captureError(error, 'isWeeklyReflectionDue');
     return false;
   }
 }

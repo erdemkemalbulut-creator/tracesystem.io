@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import StepIndicator from '../../components/StepIndicator';
 
 export default function Onboarding05() {
   const { updateProfile, profile, user } = useAuth();
@@ -50,6 +51,7 @@ export default function Onboarding05() {
         ← Back
       </button>
       <div className="onboarding-screen">
+        <StepIndicator current={5} total={7} />
         <div className="onboarding-prompt">
           <label>If nothing changes, what are you most afraid this turns into over time?</label>
           <textarea

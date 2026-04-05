@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { supabase } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -6,27 +8,35 @@ function Feedback() {
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!message.trim()) return;
 
-    if (message.trim()) {
-      console.log('Feedback submitted:', { message, email });
+    setSubmitting(true);
+    setErrorMsg('');
 
-      const feedback = {
-        message,
-        email,
-        timestamp: new Date().toISOString(),
-      };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-      const existingFeedback = localStorage.getItem('trace_feedback');
-      const feedbackArray = existingFeedback ? JSON.parse(existingFeedback) : [];
-      feedbackArray.push(feedback);
-      localStorage.setItem('trace_feedback', JSON.stringify(feedbackArray));
+      const { error } = await supabase.from('feedback').insert({
+        message: message.trim(),
+        email: email.trim() || null,
+        user_id: user?.id ?? null,
+      });
+
+      if (error) throw error;
 
       setSubmitted(true);
       setMessage('');
       setEmail('');
+    } catch (error) {
+      captureError(error, 'submitFeedback');
+      setErrorMsg('Failed to send feedback. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -57,8 +67,9 @@ function Feedback() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email (optional)"
             />
-            <button type="submit" className="primary">
-              Send feedback
+            {errorMsg && <p className="error-message">{errorMsg}</p>}
+            <button type="submit" className="primary" disabled={submitting}>
+              {submitting ? 'Sending...' : 'Send feedback'}
             </button>
           </form>
         )}

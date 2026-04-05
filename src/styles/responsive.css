@@ -1,0 +1,37 @@
+/* Responsive breakpoints */
+
+@media (min-width: 640px) {
+  .page {
+    padding: 3rem 2rem 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .button-group {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .reset-actions {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .header {
+    padding: 1.25rem 2rem;
+  }
+
+  .footer {
+    padding: 2.5rem 2rem 2.5rem;
+  }
+
+  .article-content {
+    padding: 4rem 2rem;
+  }
+
+  .feedback-content {
+    padding: 4rem 2rem;
+  }
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import StepIndicator from '../../components/StepIndicator';
 
 export default function Onboarding03() {
   const { updateProfile, profile, user } = useAuth();
@@ -50,6 +51,7 @@ export default function Onboarding03() {
         ← Back
       </button>
       <div className="onboarding-screen">
+        <StepIndicator current={3} total={7} />
         <div className="onboarding-prompt">
           <label>What do you tend to delay, even when you know it matters?</label>
           <textarea

@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import PageTransition from '../../components/PageTransition';
+import { SkeletonLine, SkeletonBlock } from '../../components/Skeleton';
 import Onboarding01 from './Onboarding01';
 import Onboarding02 from './Onboarding02';
 import Onboarding03 from './Onboarding03';
@@ -35,8 +37,10 @@ export default function OnboardingRouter() {
   if (loading) {
     return (
       <div className="page">
-        <div className="onboarding-screen">
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Loading...</p>
+        <div className="skeleton-group" style={{ maxWidth: 560, paddingTop: '2rem' }}>
+          <SkeletonLine width="60%" height="1rem" />
+          <SkeletonLine width="90%" />
+          <SkeletonBlock height="80px" />
         </div>
       </div>
     );
@@ -46,22 +50,20 @@ export default function OnboardingRouter() {
     return null;
   }
 
+  let content: React.ReactNode = null;
   switch (step) {
-    case '01':
-      return <Onboarding01 />;
-    case '02':
-      return <Onboarding02 />;
-    case '03':
-      return <Onboarding03 />;
-    case '04':
-      return <Onboarding04 />;
-    case '05':
-      return <Onboarding05 />;
-    case '06':
-      return <Onboarding06 />;
-    case '07':
-      return <Onboarding07 />;
-    default:
-      return null;
+    case '01': content = <Onboarding01 />; break;
+    case '02': content = <Onboarding02 />; break;
+    case '03': content = <Onboarding03 />; break;
+    case '04': content = <Onboarding04 />; break;
+    case '05': content = <Onboarding05 />; break;
+    case '06': content = <Onboarding06 />; break;
+    case '07': content = <Onboarding07 />; break;
   }
+
+  return (
+    <PageTransition key={step}>
+      {content}
+    </PageTransition>
+  );
 }

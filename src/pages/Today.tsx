@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import Header from '../components/Header';
+import PageTransition from '../components/PageTransition';
+import ProgressRing from '../components/ProgressRing';
+import AnimatedCheckbox from '../components/AnimatedCheckbox';
+import { SkeletonLine, SkeletonBlock } from '../components/Skeleton';
 import Day7Reflection from './Day7Reflection';
 import Day14Checkpoint from './Day14Checkpoint';
 import Day21Checkpoint from './Day21Checkpoint';
@@ -11,8 +15,17 @@ import {
   getDayNumber,
   getDailyEntry,
   saveDailyEntry,
+  getPhaseForDay,
 } from '../utils/storage';
 import { SectionIcon } from '../ui/icons';
+
+const PHASE_LABELS = ['Awareness', 'Honesty', 'Integrity', 'Stabilization'] as const;
+const PHASE_KEYS = ['awareness', 'honesty', 'integrity', 'stabilization'] as const;
+
+function getPhaseIndex(day: number): number {
+  const phase = getPhaseForDay(day);
+  return PHASE_KEYS.indexOf(phase as typeof PHASE_KEYS[number]);
+}
 
 export default function Today() {
   const navigate = useNavigate();
@@ -22,11 +35,14 @@ export default function Today() {
   const [shouldShowDay14, setShouldShowDay14] = useState(false);
   const [shouldShowDay21, setShouldShowDay21] = useState(false);
   const [shouldShowDay30, setShouldShowDay30] = useState(false);
+  const [seasonStartDate, setSeasonStartDate] = useState<string | undefined>();
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success'>('idle');
 
-  const rawDayNumber = getDayNumber();
+  const rawDayNumber = getDayNumber(seasonStartDate);
   const dayNumber = Math.min(rawDayNumber, 30);
   const existingEntry = getDailyEntry(dayNumber);
   const isDaySaved = existingEntry && existingEntry.saved_at;
+  const currentPhaseIndex = getPhaseIndex(dayNumber);
 
   const [awarenessText, setAwarenessText] = useState(
     existingEntry?.awareness_text || ''
@@ -43,6 +59,14 @@ export default function Today() {
   const [errorMessage, setErrorMessage] = useState('');
   const [timeUntilNext, setTimeUntilNext] = useState('');
 
+  // Form completion percentage
+  const completionPercent = [
+    awarenessText.trim().length > 0,
+    alignmentDone,
+    integrityDone,
+    reflectionText.trim().length > 0,
+  ].filter(Boolean).length * 25;
+
   useEffect(() => {
     const checkCheckpoints = async () => {
       if (!user || !profile?.onboarding_complete) {
@@ -52,7 +76,7 @@ export default function Today() {
 
       const { data: season } = await supabase
         .from('seasons')
-        .select('id, day_30_closure_seen')
+        .select('id, start_date, day_30_closure_seen')
         .eq('user_id', user.id)
         .eq('is_closed', false)
         .order('start_date', { ascending: false })
@@ -62,6 +86,8 @@ export default function Today() {
         setCheckingCheckpoints(false);
         return;
       }
+
+      setSeasonStartDate(season.start_date);
 
       const { data: entries } = await supabase
         .from('daily_entries')
@@ -135,6 +161,8 @@ export default function Today() {
       return;
     }
 
+    setSaveState('saving');
+
     saveDailyEntry(
       dayNumber,
       awarenessText,
@@ -143,57 +171,68 @@ export default function Today() {
       reflectionText
     );
 
-    navigate(`/day/${dayNumber}/saved`);
+    setTimeout(() => {
+      setSaveState('success');
+      setTimeout(() => {
+        navigate(`/day/${dayNumber}/saved`);
+      }, 600);
+    }, 400);
   };
 
   if (checkingCheckpoints) {
     return (
       <div className="page">
-        <div className="onboarding-screen">
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Loading...</p>
+        <div className="skeleton-group" style={{ maxWidth: 560, paddingTop: '2rem' }}>
+          <SkeletonLine width="120px" height="1.5rem" />
+          <SkeletonLine width="80%" />
+          <SkeletonBlock height="100px" />
+          <SkeletonLine width="60%" />
+          <SkeletonBlock height="140px" />
         </div>
       </div>
     );
   }
 
-  if (shouldShowDay30) {
-    return <Day30Closure />;
-  }
-
-  if (shouldShowDay7) {
-    return <Day7Reflection />;
-  }
-
-  if (shouldShowDay14) {
-    return <Day14Checkpoint />;
-  }
-
-  if (shouldShowDay21) {
-    return <Day21Checkpoint />;
-  }
+  if (shouldShowDay30) return <Day30Closure />;
+  if (shouldShowDay7) return <Day7Reflection />;
+  if (shouldShowDay14) return <Day14Checkpoint />;
+  if (shouldShowDay21) return <Day21Checkpoint />;
 
   if (isDaySaved) {
     return (
       <div className="page-with-shell reflective-bg">
         <Header variant="system" />
+        <PageTransition>
         <div className="page">
-          <div className="completion-container">
+          <div className="completion-container" style={{ alignItems: 'center', textAlign: 'center' }}>
+            <ProgressRing current={dayNumber} total={30} size={100} label="/ 30" />
+
             <div className="completion-section">
               <h1>Today is complete.</h1>
+              <span className="today-phase-name">{PHASE_LABELS[currentPhaseIndex]} phase</span>
+            </div>
+
+            {/* Phase bar */}
+            <div className="phase-bar">
+              {PHASE_KEYS.map((key, i) => (
+                <div
+                  key={key}
+                  className={`phase-bar__segment ${
+                    i < currentPhaseIndex ? 'phase-bar__segment--completed' :
+                    i === currentPhaseIndex ? 'phase-bar__segment--active' : ''
+                  }`}
+                />
+              ))}
             </div>
 
             <div className="completion-section">
               <p className="completion-body">The system will open again in:</p>
-              <p className="completion-body" style={{ fontSize: '1.5rem', fontWeight: '500', marginTop: '0.5rem' }}>
+              <p className="completion-body" style={{ fontSize: '1.75rem', fontWeight: '600', marginTop: '0.5rem', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
                 {timeUntilNext}
               </p>
               <p className="completion-tip" style={{ marginTop: '1rem' }}>
                 One entry per day. Nothing more is expected.
               </p>
-            </div>
-
-            <div className="completion-section">
-              <p className="completion-tip">Trace records time, not effort.</p>
             </div>
 
             <Link to={`/day/${dayNumber}`}>
@@ -203,6 +242,7 @@ export default function Today() {
             </Link>
           </div>
         </div>
+        </PageTransition>
       </div>
     );
   }
@@ -210,14 +250,38 @@ export default function Today() {
   return (
     <div className="page-with-shell reflective-bg">
       <Header variant="system" />
+      <PageTransition>
       <div className="page">
         <div className="today-container">
+
+        {/* Progress header */}
         <div className="today-header">
+          <ProgressRing current={dayNumber} total={30} />
           <h1>Day {dayNumber}</h1>
+          <span className="today-phase-name">{PHASE_LABELS[currentPhaseIndex]} phase</span>
+
+          {/* Phase bar */}
+          <div className="phase-bar">
+            {PHASE_KEYS.map((key, i) => (
+              <div
+                key={key}
+                className={`phase-bar__segment ${
+                  i < currentPhaseIndex ? 'phase-bar__segment--completed' :
+                  i === currentPhaseIndex ? 'phase-bar__segment--active' : ''
+                }`}
+              />
+            ))}
+          </div>
+
           <p className="meta-text">This takes under a minute. Accuracy matters more than completion.</p>
           {rawDayNumber > 30 && (
             <p className="season-complete-notice">Season complete. Review in Settings.</p>
           )}
+        </div>
+
+        {/* Form completion bar */}
+        <div className="completion-bar">
+          <div className="completion-bar__fill" style={{ width: `${completionPercent}%` }} />
         </div>
 
         <div className="orientation-section">
@@ -245,14 +309,11 @@ export default function Today() {
             <p className="action-desc">
               Did you do one thing that directly confronted what you avoided?
             </p>
-            <label className="checkbox-container">
-              <input
-                type="checkbox"
-                checked={alignmentDone}
-                onChange={(e) => setAlignmentDone(e.target.checked)}
-              />
-              <span>Done</span>
-            </label>
+            <AnimatedCheckbox
+              checked={alignmentDone}
+              onChange={setAlignmentDone}
+              label="Done"
+            />
           </div>
 
           <div className="action-item">
@@ -263,14 +324,11 @@ export default function Today() {
             <p className="action-desc">
               Did you keep one promise you made to yourself, even if no one knows?
             </p>
-            <label className="checkbox-container">
-              <input
-                type="checkbox"
-                checked={integrityDone}
-                onChange={(e) => setIntegrityDone(e.target.checked)}
-              />
-              <span>Done</span>
-            </label>
+            <AnimatedCheckbox
+              checked={integrityDone}
+              onChange={setIntegrityDone}
+              label="Done"
+            />
           </div>
         </div>
 
@@ -290,11 +348,13 @@ export default function Today() {
           />
           {errorMessage && <p className="error-message">{errorMessage}</p>}
           <button
-            className="primary"
+            className={`primary ${saveState === 'success' ? 'glow-accent' : ''}`}
             onClick={handleSave}
-            disabled={!awarenessText.trim() || !reflectionText.trim()}
+            disabled={!awarenessText.trim() || !reflectionText.trim() || saveState !== 'idle'}
           >
-            Record day
+            {saveState === 'idle' && 'Record day'}
+            {saveState === 'saving' && 'Saving...'}
+            {saveState === 'success' && 'Saved'}
           </button>
           <p className="meta-text" style={{ marginTop: '12px', fontSize: '0.8rem' }}>
             Trace does not evaluate this entry. It only records it.
@@ -302,6 +362,7 @@ export default function Today() {
         </div>
       </div>
       </div>
+      </PageTransition>
     </div>
   );
 }

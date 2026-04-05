@@ -65,13 +65,17 @@ export const isOnboardingCompleted = (): boolean => {
   return getTraceData().onboarding_completed;
 };
 
-export const getDayNumber = (): number => {
-  const data = getTraceData();
-  if (!data.season_start_date) return 1;
+export const getDayNumber = (seasonStartDate?: string): number => {
+  const startStr = seasonStartDate ?? getTraceData().season_start_date;
+  if (!startStr) return 1;
 
-  const start = new Date(data.season_start_date).getTime();
-  const now = Date.now();
-  const dayNumber = Math.floor((now - start) / 86400000) + 1;
+  const start = new Date(startStr);
+  const now = new Date();
+
+  // Compare calendar dates to avoid timezone/DST drift
+  const startDay = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayNumber = Math.floor((today - startDay) / 86400000) + 1;
 
   return Math.max(1, dayNumber);
 };

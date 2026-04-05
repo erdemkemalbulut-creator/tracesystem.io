@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clearAllData } from '../utils/storage';
 import { supabase } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 import { SectionIcon, HeaderIcons } from '../ui/icons';
 import Header from '../components/Header';
 
@@ -72,7 +73,7 @@ export default function Settings() {
       }
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching seasons:', error);
+      captureError(error, 'fetchSeasons');
       setLoading(false);
     }
   };
