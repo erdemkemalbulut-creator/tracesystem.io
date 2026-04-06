@@ -30,15 +30,25 @@ export async function getOrGenerateDailyQuestion(
     return getQuestionForDay(dayNumber);
   }
 
-  // Call edge function for AI question
+  // Call Vercel API route for AI question
   try {
-    const { data, error } = await supabase.functions.invoke('generate-question');
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
 
-    if (error) {
-      console.error('AI question generation failed:', error);
+    const res = await fetch('/api/generate-question', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      console.error('AI question generation failed:', res.status);
       return getQuestionForDay(dayNumber);
     }
 
+    const data = await res.json();
     return data?.question || getQuestionForDay(dayNumber);
   } catch (err) {
     console.error('AI question generation failed:', err);
