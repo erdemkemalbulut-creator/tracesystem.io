@@ -77,6 +77,19 @@ export const getDayNumber = (_seasonStartDate?: string): number => {
   return Math.min(completedCount + 1, 30);
 };
 
+/**
+ * Check if today's entry has already been saved (one entry per calendar day).
+ */
+export const isTodaySaved = (): boolean => {
+  const data = getTraceData();
+  const entries = data.daily_entries || {};
+  const today = new Date().toISOString().split('T')[0];
+  return Object.values(entries).some(e => {
+    if (!e.saved_at) return false;
+    return e.saved_at.split('T')[0] === today;
+  });
+};
+
 export const getDailyEntry = (dayNumber: number): DailyEntry | undefined => {
   const data = getTraceData();
   return data.daily_entries?.[dayNumber];

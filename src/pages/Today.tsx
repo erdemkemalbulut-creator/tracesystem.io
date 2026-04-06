@@ -16,6 +16,7 @@ import {
   getDailyEntry,
   saveDailyEntry,
   getPhaseForDay,
+  isTodaySaved,
 } from '../utils/storage';
 import { getQuestionForDay } from '../utils/questions';
 import { getOrGenerateDailyQuestion } from '../utils/aiQuestion';
@@ -46,7 +47,8 @@ export default function Today() {
 
   const dayNumber = getDayNumber(seasonStartDate);
   const existingEntry = getDailyEntry(dayNumber);
-  const isDaySaved = existingEntry && existingEntry.saved_at;
+  const todayAlreadySaved = isTodaySaved();
+  const isDaySaved = todayAlreadySaved || (existingEntry && existingEntry.saved_at);
   const currentPhaseIndex = getPhaseIndex(dayNumber);
 
   // Today's question — AI-powered (falls back to static bank)

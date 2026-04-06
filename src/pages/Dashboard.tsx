@@ -148,10 +148,10 @@ export default function Dashboard() {
 
           {/* Current streak */}
           {currentStreak > 0 && (
-            <div className="streak-banner">
-              <Flame size={20} />
-              <span className="streak-banner__count">{currentStreak}</span>
-              <span className="streak-banner__label">day streak</span>
+            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem 1.5rem' }}>
+              <Flame size={20} style={{ color: 'var(--color-accent-blue)' }} />
+              <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{currentStreak}</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>day streak</span>
             </div>
           )}
 
@@ -209,11 +209,24 @@ export default function Dashboard() {
           {earnedBadges.length > 0 && (
             <div className="dashboard-section">
               <h2>Milestones</h2>
-              <div className="badges-grid">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {badges.map((b, i) => (
-                  <div key={i} className={`badge-card ${b.earned ? 'badge-card--earned' : 'badge-card--locked'}`}>
-                    <b.icon size={18} />
-                    <span className="badge-card__label">{b.label}</span>
+                  <div
+                    key={i}
+                    className="glass-card"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.875rem',
+                      borderRadius: '999px',
+                      fontSize: '0.8125rem',
+                      opacity: b.earned ? 1 : 0.3,
+                      color: b.earned ? 'var(--color-accent-blue)' : 'var(--color-text-subtle)',
+                    }}
+                  >
+                    <b.icon size={14} />
+                    <span>{b.label}</span>
                   </div>
                 ))}
               </div>
@@ -245,7 +258,9 @@ export default function Dashboard() {
           {/* Trends — now free */}
           <div className="dashboard-section">
             <h2>Trends</h2>
-            <TrendChart data={trendData} />
+            <div className="glass-card">
+              <TrendChart data={trendData} />
+            </div>
           </div>
 
           {/* Insights — now free */}
@@ -275,16 +290,30 @@ export default function Dashboard() {
           {entries.length > 0 && (
             <div className="dashboard-section">
               <h2>Recent Entries</h2>
-              <div className="entries-timeline">
+              <div className="glass-card" style={{ padding: '0.5rem' }}>
                 {[...entries].reverse().slice(0, 7).map(e => (
-                  <Link key={e.day_number} to={`/day/${e.day_number}`} className="entry-timeline-item">
-                    <span className="entry-timeline-item__day">Day {e.day_number}</span>
-                    <span className="entry-timeline-item__preview">
+                  <Link
+                    key={e.day_number}
+                    to={`/day/${e.day_number}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      transition: 'background 0.15s ease',
+                    }}
+                    className="entry-timeline-item"
+                  >
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', minWidth: '48px' }}>Day {e.day_number}</span>
+                    <span style={{ flex: 1, fontSize: '0.8125rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {e.ai_question_answer
                         ? e.ai_question_answer.slice(0, 60) + (e.ai_question_answer.length > 60 ? '...' : '')
                         : 'Entry recorded'}
                     </span>
-                    <span className="entry-timeline-item__meta">
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)', whiteSpace: 'nowrap' }}>
                       {[e.alignment_done && 'A', e.integrity_done && 'I'].filter(Boolean).join(' · ') || '—'}
                     </span>
                   </Link>
