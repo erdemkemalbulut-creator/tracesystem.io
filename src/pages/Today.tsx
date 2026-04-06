@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import Header from '../components/Header';
 import PageTransition from '../components/PageTransition';
 import ProgressRing from '../components/ProgressRing';
-import AnimatedCheckbox from '../components/AnimatedCheckbox';
+import TrackableToggle from '../components/TrackableToggle';
 import { SkeletonLine, SkeletonBlock } from '../components/Skeleton';
 import Day7Reflection from './Day7Reflection';
 import Day14Checkpoint from './Day14Checkpoint';
@@ -17,7 +17,10 @@ import {
   saveDailyEntry,
   getPhaseForDay,
 } from '../utils/storage';
-import { SectionIcon } from '../ui/icons';
+import { getQuestionForDay } from '../utils/questions';
+import { getOrGenerateDailyQuestion } from '../utils/aiQuestion';
+import { useTrackables } from '../hooks/useTrackables';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const PHASE_LABELS = ['Awareness', 'Honesty', 'Integrity', 'Stabilization'] as const;
 const PHASE_KEYS = ['awareness', 'honesty', 'integrity', 'stabilization'] as const;
@@ -30,43 +33,63 @@ function getPhaseIndex(day: number): number {
 export default function Today() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { trackables, loading: trackablesLoading } = useTrackables();
+
   const [checkingCheckpoints, setCheckingCheckpoints] = useState(true);
   const [shouldShowDay7, setShouldShowDay7] = useState(false);
   const [shouldShowDay14, setShouldShowDay14] = useState(false);
   const [shouldShowDay21, setShouldShowDay21] = useState(false);
   const [shouldShowDay30, setShouldShowDay30] = useState(false);
   const [seasonStartDate, setSeasonStartDate] = useState<string | undefined>();
+  const [seasonId, setSeasonId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success'>('idle');
 
-  const rawDayNumber = getDayNumber(seasonStartDate);
-  const dayNumber = Math.min(rawDayNumber, 30);
+  const dayNumber = getDayNumber(seasonStartDate);
   const existingEntry = getDailyEntry(dayNumber);
   const isDaySaved = existingEntry && existingEntry.saved_at;
   const currentPhaseIndex = getPhaseIndex(dayNumber);
 
-  const [awarenessText, setAwarenessText] = useState(
-    existingEntry?.awareness_text || ''
-  );
-  const [alignmentDone, setAlignmentDone] = useState(
-    existingEntry?.alignment_done || false
-  );
-  const [integrityDone, setIntegrityDone] = useState(
-    existingEntry?.integrity_done || false
-  );
-  const [reflectionText, setReflectionText] = useState(
-    existingEntry?.reflection_text || ''
-  );
+  // Today's question — AI-powered (falls back to static bank)
+  const [todayQuestion, setTodayQuestion] = useState(getQuestionForDay(dayNumber));
+  const [questionLoading, setQuestionLoading] = useState(false);
+
+  // Form state
+  const [trackableStates, setTrackableStates] = useState<Record<string, boolean>>({});
+  const [questionAnswer, setQuestionAnswer] = useState('');
+  const [showReflection, setShowReflection] = useState(false);
+  const [reflectionText, setReflectionText] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [timeUntilNext, setTimeUntilNext] = useState('');
 
-  // Form completion percentage
-  const completionPercent = [
-    awarenessText.trim().length > 0,
-    alignmentDone,
-    integrityDone,
-    reflectionText.trim().length > 0,
-  ].filter(Boolean).length * 25;
+  // Completion: trackables count + question answer + optional reflection
+  const trackablesDone = Object.values(trackableStates).filter(Boolean).length;
+  const totalTrackables = trackables.length;
+  const hasAnswer = questionAnswer.trim().length > 0;
+  const completionSteps = totalTrackables > 0
+    ? [trackablesDone > 0, hasAnswer]
+    : [hasAnswer];
+  const completionPercent = Math.round(
+    (completionSteps.filter(Boolean).length / completionSteps.length) * 100
+  );
 
+  // Load existing entry data
+  useEffect(() => {
+    if (existingEntry) {
+      setQuestionAnswer(existingEntry.awareness_text || '');
+      setReflectionText(existingEntry.reflection_text || '');
+    }
+  }, [dayNumber]);
+
+  // Load AI question
+  useEffect(() => {
+    if (!user || !seasonId || isDaySaved) return;
+    setQuestionLoading(true);
+    getOrGenerateDailyQuestion(user.id, dayNumber)
+      .then(q => setTodayQuestion(q))
+      .finally(() => setQuestionLoading(false));
+  }, [user, seasonId, dayNumber, isDaySaved]);
+
+  // Check checkpoints
   useEffect(() => {
     const checkCheckpoints = async () => {
       if (!user || !profile?.onboarding_complete) {
@@ -88,6 +111,7 @@ export default function Today() {
       }
 
       setSeasonStartDate(season.start_date);
+      setSeasonId(season.id);
 
       const { data: entries } = await supabase
         .from('daily_entries')
@@ -114,16 +138,7 @@ export default function Today() {
     checkCheckpoints();
   }, [user, profile]);
 
-  useEffect(() => {
-    const entry = getDailyEntry(dayNumber);
-    if (entry) {
-      setAwarenessText(entry.awareness_text || '');
-      setAlignmentDone(entry.alignment_done);
-      setIntegrityDone(entry.integrity_done);
-      setReflectionText(entry.reflection_text || '');
-    }
-  }, [dayNumber]);
-
+  // Countdown timer when day is saved
   useEffect(() => {
     if (!isDaySaved) return;
 
@@ -144,42 +159,80 @@ export default function Today() {
 
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
-
     return () => clearInterval(interval);
   }, [isDaySaved]);
 
-  const handleSave = () => {
+  const handleToggleTrackable = (id: string, checked: boolean) => {
+    setTrackableStates(prev => ({ ...prev, [id]: checked }));
+  };
+
+  const handleSave = async () => {
     setErrorMessage('');
 
-    if (!awarenessText.trim()) {
-      setErrorMessage('Awareness field is required.');
-      return;
-    }
-
-    if (!reflectionText.trim()) {
-      setErrorMessage('Reflection field is required.');
+    if (!questionAnswer.trim()) {
+      setErrorMessage('Please answer today\'s question.');
       return;
     }
 
     setSaveState('saving');
 
+    // Save to localStorage (backward compat: awareness_text = question answer)
     saveDailyEntry(
       dayNumber,
-      awarenessText,
-      alignmentDone,
-      integrityDone,
+      questionAnswer,
+      trackablesDone > 0, // alignment_done = at least one trackable done
+      trackablesDone === totalTrackables && totalTrackables > 0, // integrity_done = all trackables done
       reflectionText
     );
 
+    // Sync to Supabase
+    if (user && seasonId) {
+      try {
+        await supabase.from('daily_entries').upsert(
+          {
+            user_id: user.id,
+            season_id: seasonId,
+            day_number: dayNumber,
+            orientation_text: questionAnswer,
+            alignment_done: trackablesDone > 0,
+            integrity_done: trackablesDone === totalTrackables && totalTrackables > 0,
+            reflection_text: reflectionText || '',
+            ai_question_text: todayQuestion,
+            ai_question_answer: questionAnswer,
+            recorded_date: new Date().toISOString().split('T')[0],
+            saved_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,season_id,day_number' }
+        );
+
+        // Save trackable entries
+        const trackableEntries = trackables.map(t => ({
+          user_id: user.id,
+          trackable_id: t.id,
+          completed: trackableStates[t.id] || false,
+          recorded_date: new Date().toISOString().split('T')[0],
+          season_id: seasonId,
+        }));
+
+        if (trackableEntries.length > 0) {
+          await supabase.from('daily_trackable_entries').upsert(
+            trackableEntries,
+            { onConflict: 'trackable_id,recorded_date' }
+          );
+        }
+      } catch (err) {
+        console.error('Supabase sync failed:', err);
+      }
+    }
+
+    setSaveState('success');
     setTimeout(() => {
-      setSaveState('success');
-      setTimeout(() => {
-        navigate(`/day/${dayNumber}/saved`);
-      }, 600);
-    }, 400);
+      navigate(`/day/${dayNumber}/saved`);
+    }, 600);
   };
 
-  if (checkingCheckpoints) {
+  // Loading states
+  if (checkingCheckpoints || trackablesLoading) {
     return (
       <div className="page">
         <div className="skeleton-group" style={{ maxWidth: 560, paddingTop: '2rem' }}>
@@ -193,11 +246,13 @@ export default function Today() {
     );
   }
 
+  // Checkpoint screens
   if (shouldShowDay30) return <Day30Closure />;
   if (shouldShowDay7) return <Day7Reflection />;
   if (shouldShowDay14) return <Day14Checkpoint />;
   if (shouldShowDay21) return <Day21Checkpoint />;
 
+  // Day already saved
   if (isDaySaved) {
     return (
       <div className="page-with-shell reflective-bg">
@@ -212,7 +267,6 @@ export default function Today() {
               <span className="today-phase-name">{PHASE_LABELS[currentPhaseIndex]} phase</span>
             </div>
 
-            {/* Phase bar */}
             <div className="phase-bar">
               {PHASE_KEYS.map((key, i) => (
                 <div
@@ -247,6 +301,7 @@ export default function Today() {
     );
   }
 
+  // Main check-in form
   return (
     <div className="page-with-shell reflective-bg">
       <Header variant="system" />
@@ -260,7 +315,6 @@ export default function Today() {
           <h1>Day {dayNumber}</h1>
           <span className="today-phase-name">{PHASE_LABELS[currentPhaseIndex]} phase</span>
 
-          {/* Phase bar */}
           <div className="phase-bar">
             {PHASE_KEYS.map((key, i) => (
               <div
@@ -273,94 +327,118 @@ export default function Today() {
             ))}
           </div>
 
-          <p className="meta-text">This takes under a minute. Accuracy matters more than completion.</p>
-          {rawDayNumber > 30 && (
+          <p className="meta-text">Quick check-in. Under 30 seconds.</p>
+          {dayNumber >= 30 && existingEntry && (
             <p className="season-complete-notice">Season complete. Review in Settings.</p>
           )}
         </div>
 
-        {/* Form completion bar */}
+        {/* Completion bar */}
         <div className="completion-bar">
           <div className="completion-bar__fill" style={{ width: `${completionPercent}%` }} />
         </div>
 
-        <div className="orientation-section">
-          <label className="orientation-prompt" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <SectionIcon name="Awareness" />
-            <span>What did you avoid today that you knew mattered?</span>
+        {/* Trackable toggles */}
+        {trackables.length > 0 && (
+          <div className="orientation-section">
+            <label className="orientation-prompt">
+              How did you show up today?
+            </label>
+            <div className="trackables-grid">
+              {trackables.map(t => (
+                <TrackableToggle
+                  key={t.id}
+                  emoji={t.emoji}
+                  label={t.label}
+                  checked={trackableStates[t.id] || false}
+                  onChange={(checked) => handleToggleTrackable(t.id, checked)}
+                />
+              ))}
+            </div>
+            <Link to="/trackables" className="manage-trackables-link">
+              + Manage behaviors
+            </Link>
+          </div>
+        )}
+
+        {trackables.length === 0 && (
+          <div className="orientation-section">
+            <label className="orientation-prompt">
+              Start by adding behaviors to track
+            </label>
+            <p className="orientation-helper">
+              Define what matters to you — things like "Had the hard conversation" or "Kept my morning routine."
+            </p>
+            <Link to="/trackables" className="primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+              + Add your first behavior
+            </Link>
+          </div>
+        )}
+
+        {/* Today's question */}
+        <div className="ai-question-section">
+          <label className="ai-question-prompt">
+            {questionLoading ? (
+              <SkeletonLine width="80%" height="1.2rem" />
+            ) : (
+              todayQuestion
+            )}
           </label>
-          <p className="orientation-helper">
-            Be literal. One sentence is enough.
-          </p>
           <textarea
-            value={awarenessText}
-            onChange={(e) => setAwarenessText(e.target.value)}
+            value={questionAnswer}
+            onChange={(e) => setQuestionAnswer(e.target.value)}
             rows={3}
-            placeholder="I avoided sending the message I knew would be uncomfortable."
+            placeholder="Be honest. One sentence is enough."
           />
         </div>
 
-        <div className="action-section">
-          <div className="action-item">
-            <h3 className="action-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <SectionIcon name="Alignment" />
-              <span>One act of alignment</span>
-            </h3>
-            <p className="action-desc">
-              Did you do one thing that directly confronted what you avoided?
-            </p>
-            <AnimatedCheckbox
-              checked={alignmentDone}
-              onChange={setAlignmentDone}
-              label="Done"
-            />
-          </div>
+        {/* Optional deeper reflection */}
+        <div>
+          <button
+            type="button"
+            className="reflection-expander"
+            onClick={() => setShowReflection(!showReflection)}
+          >
+            {showReflection ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {showReflection ? 'Hide deeper reflection' : 'Add deeper reflection'}
+          </button>
 
-          <div className="action-item">
-            <h3 className="action-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <SectionIcon name="Integrity" />
-              <span>One act of integrity</span>
-            </h3>
-            <p className="action-desc">
-              Did you keep one promise you made to yourself, even if no one knows?
-            </p>
-            <AnimatedCheckbox
-              checked={integrityDone}
-              onChange={setIntegrityDone}
-              label="Done"
-            />
-          </div>
+          {showReflection && (
+            <div className="reflection-section" style={{ marginTop: '0.75rem' }}>
+              <label className="reflection-question">
+                What actually happened today?
+              </label>
+              <p className="reflection-helper">
+                Record what is true. Do not explain or justify.
+              </p>
+              <textarea
+                value={reflectionText}
+                onChange={(e) => setReflectionText(e.target.value)}
+                rows={5}
+                placeholder="I noticed the same hesitation and chose not to act."
+              />
+            </div>
+          )}
         </div>
 
-        <div className="reflection-section">
-          <label className="reflection-question" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <SectionIcon name="Reflection" />
-            <span>What actually happened today?</span>
-          </label>
-          <p className="reflection-helper">
-            Record what is true. Do not explain or justify.
-          </p>
-          <textarea
-            value={reflectionText}
-            onChange={(e) => setReflectionText(e.target.value)}
-            rows={6}
-            placeholder="I noticed the same hesitation and chose not to act."
-          />
+        {/* Save */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
           <button
             className={`primary ${saveState === 'success' ? 'glow-accent' : ''}`}
             onClick={handleSave}
-            disabled={!awarenessText.trim() || !reflectionText.trim() || saveState !== 'idle'}
+            disabled={!questionAnswer.trim() || saveState !== 'idle'}
           >
-            {saveState === 'idle' && 'Record day'}
+            {saveState === 'idle' && 'Save check-in'}
             {saveState === 'saving' && 'Saving...'}
             {saveState === 'success' && 'Saved'}
           </button>
-          <p className="meta-text" style={{ marginTop: '12px', fontSize: '0.8rem' }}>
-            Trace does not evaluate this entry. It only records it.
+          <p className="meta-text" style={{ fontSize: '0.8rem', textAlign: 'center' }}>
+            Trace records. It does not judge.
           </p>
         </div>
-      </div>
+
+        </div>
       </div>
       </PageTransition>
     </div>

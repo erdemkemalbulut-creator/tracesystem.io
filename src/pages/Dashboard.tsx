@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
@@ -6,14 +7,15 @@ import Header from '../components/Header';
 import PageTransition from '../components/PageTransition';
 import ProgressRing from '../components/ProgressRing';
 import TrendChart from '../components/TrendChart';
-import PremiumGate from '../components/PremiumGate';
 import { SkeletonBlock } from '../components/Skeleton';
-import { Download } from 'lucide-react';
+import { Flame, Trophy, Target, Zap, Download } from 'lucide-react';
 
 interface EntryData {
   day_number: number;
   alignment_done: boolean;
   integrity_done: boolean;
+  ai_question_text: string | null;
+  ai_question_answer: string | null;
   saved_at: string | null;
 }
 
@@ -24,11 +26,23 @@ const PHASE_RANGES = [
   { name: 'Stabilization', start: 22, end: 30 },
 ];
 
+// Badge definitions
+function computeBadges(entries: EntryData[], currentStreak: number, maxStreak: number) {
+  const badges: { icon: typeof Flame; label: string; earned: boolean }[] = [
+    { icon: Flame, label: '3-day streak', earned: maxStreak >= 3 },
+    { icon: Flame, label: '7-day streak', earned: maxStreak >= 7 },
+    { icon: Flame, label: '14-day streak', earned: maxStreak >= 14 },
+    { icon: Trophy, label: '30 days complete', earned: entries.length >= 30 },
+    { icon: Target, label: 'Perfect day', earned: entries.some(e => e.alignment_done && e.integrity_done) },
+    { icon: Zap, label: 'First entry', earned: entries.length >= 1 },
+  ];
+  return badges;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<EntryData[]>([]);
   const [loading, setLoading] = useState(true);
-  const isPremium = false; // Premium gate placeholder
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,7 +64,7 @@ export default function Dashboard() {
 
         const { data: entriesData } = await supabase
           .from('daily_entries')
-          .select('day_number, alignment_done, integrity_done, saved_at')
+          .select('day_number, alignment_done, integrity_done, ai_question_text, ai_question_answer, saved_at')
           .eq('user_id', user.id)
           .eq('season_id', season.id)
           .not('saved_at', 'is', null)
@@ -72,7 +86,7 @@ export default function Dashboard() {
   const integrityCount = entries.filter(e => e.integrity_done).length;
   const bothCount = entries.filter(e => e.alignment_done && e.integrity_done).length;
 
-  // Longest streak
+  // Streaks
   let maxStreak = 0;
   let currentStreak = 0;
   for (let d = 1; d <= 30; d++) {
@@ -92,7 +106,7 @@ export default function Dashboard() {
   });
   const bestPhase = phaseConsistency.reduce((a, b) => a.pct >= b.pct ? a : b, phaseConsistency[0]);
 
-  // Heatmap data
+  // Heatmap + entry map
   const entryMap = new Map(entries.map(e => [e.day_number, e]));
 
   // Trend data
@@ -101,6 +115,10 @@ export default function Dashboard() {
     alignment: e.alignment_done,
     integrity: e.integrity_done,
   }));
+
+  // Badges
+  const badges = computeBadges(entries, currentStreak, maxStreak);
+  const earnedBadges = badges.filter(b => b.earned);
 
   if (loading) {
     return (
@@ -128,6 +146,15 @@ export default function Dashboard() {
             <h1>Dashboard</h1>
           </div>
 
+          {/* Current streak */}
+          {currentStreak > 0 && (
+            <div className="streak-banner">
+              <Flame size={20} />
+              <span className="streak-banner__count">{currentStreak}</span>
+              <span className="streak-banner__label">day streak</span>
+            </div>
+          )}
+
           {/* Progress ring + summary */}
           <div className="dashboard-progress">
             <ProgressRing current={daysCompleted} total={30} size={140} label="/ 30 days" />
@@ -147,7 +174,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Heatmap */}
+          {/* Clickable heatmap */}
           <div className="dashboard-section">
             <h2>Season Map</h2>
             <div className="heatmap">
@@ -160,6 +187,15 @@ export default function Dashboard() {
                     ? ' heatmap__cell--full'
                     : ' heatmap__cell--partial';
                 }
+
+                if (entry) {
+                  return (
+                    <Link key={day} to={`/day/${day}`} className={`${cls} heatmap__cell--clickable`} title={`Day ${day} — tap to view`}>
+                      <span className="heatmap__day">{day}</span>
+                    </Link>
+                  );
+                }
+
                 return (
                   <div key={day} className={cls} title={`Day ${day}`}>
                     <span className="heatmap__day">{day}</span>
@@ -168,6 +204,21 @@ export default function Dashboard() {
               })}
             </div>
           </div>
+
+          {/* Badges */}
+          {earnedBadges.length > 0 && (
+            <div className="dashboard-section">
+              <h2>Milestones</h2>
+              <div className="badges-grid">
+                {badges.map((b, i) => (
+                  <div key={i} className={`badge-card ${b.earned ? 'badge-card--earned' : 'badge-card--locked'}`}>
+                    <b.icon size={18} />
+                    <span className="badge-card__label">{b.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Phase breakdown */}
           <div className="dashboard-section">
@@ -191,47 +242,63 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Trend chart — premium */}
+          {/* Trends — now free */}
           <div className="dashboard-section">
             <h2>Trends</h2>
-            <PremiumGate isPremium={isPremium} featureName="Trend Analysis">
-              <TrendChart data={trendData} />
-            </PremiumGate>
+            <TrendChart data={trendData} />
           </div>
 
-          {/* Pattern insights — premium */}
+          {/* Insights — now free */}
           <div className="dashboard-section">
             <h2>Insights</h2>
-            <PremiumGate isPremium={isPremium} featureName="Pattern Insights">
-              <div className="insights-grid">
-                <div className="glass-card insight-card">
-                  <p className="insight-card__value">{maxStreak}</p>
-                  <p className="insight-card__label">Longest consecutive streak</p>
-                </div>
-                <div className="glass-card insight-card">
-                  <p className="insight-card__value">{daysCompleted > 0 ? Math.round((alignmentCount / daysCompleted) * 100) : 0}%</p>
-                  <p className="insight-card__label">Alignment rate</p>
-                </div>
-                <div className="glass-card insight-card">
-                  <p className="insight-card__value">{bestPhase?.name || '—'}</p>
-                  <p className="insight-card__label">Most consistent phase</p>
-                </div>
-                <div className="glass-card insight-card">
-                  <p className="insight-card__value">{daysCompleted > 0 ? Math.round((bothCount / daysCompleted) * 100) : 0}%</p>
-                  <p className="insight-card__label">Full completion rate</p>
-                </div>
+            <div className="insights-grid">
+              <div className="glass-card insight-card">
+                <p className="insight-card__value">{maxStreak}</p>
+                <p className="insight-card__label">Longest streak</p>
               </div>
-            </PremiumGate>
+              <div className="glass-card insight-card">
+                <p className="insight-card__value">{daysCompleted > 0 ? Math.round((alignmentCount / daysCompleted) * 100) : 0}%</p>
+                <p className="insight-card__label">Alignment rate</p>
+              </div>
+              <div className="glass-card insight-card">
+                <p className="insight-card__value">{bestPhase?.name || '—'}</p>
+                <p className="insight-card__label">Most consistent phase</p>
+              </div>
+              <div className="glass-card insight-card">
+                <p className="insight-card__value">{daysCompleted > 0 ? Math.round((bothCount / daysCompleted) * 100) : 0}%</p>
+                <p className="insight-card__label">Full completion rate</p>
+              </div>
+            </div>
           </div>
 
-          {/* Export — premium */}
+          {/* Recent entries timeline */}
+          {entries.length > 0 && (
+            <div className="dashboard-section">
+              <h2>Recent Entries</h2>
+              <div className="entries-timeline">
+                {[...entries].reverse().slice(0, 7).map(e => (
+                  <Link key={e.day_number} to={`/day/${e.day_number}`} className="entry-timeline-item">
+                    <span className="entry-timeline-item__day">Day {e.day_number}</span>
+                    <span className="entry-timeline-item__preview">
+                      {e.ai_question_answer
+                        ? e.ai_question_answer.slice(0, 60) + (e.ai_question_answer.length > 60 ? '...' : '')
+                        : 'Entry recorded'}
+                    </span>
+                    <span className="entry-timeline-item__meta">
+                      {[e.alignment_done && 'A', e.integrity_done && 'I'].filter(Boolean).join(' · ') || '—'}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Export */}
           <div className="dashboard-section">
-            <PremiumGate isPremium={isPremium} featureName="Season Export">
-              <button className="primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <Download size={16} aria-hidden="true" />
-                Export Season Report
-              </button>
-            </PremiumGate>
+            <button className="primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <Download size={16} aria-hidden="true" />
+              Export Season Report
+            </button>
           </div>
 
         </div>

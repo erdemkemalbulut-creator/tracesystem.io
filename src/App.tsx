@@ -20,6 +20,7 @@ import BehaviorFollowsIdentity from './pages/articles/BehaviorFollowsIdentity';
 import WhyMotivationFails from './pages/articles/WhyMotivationFails';
 import AvoidanceAndStakes from './pages/articles/AvoidanceAndStakes';
 import Dashboard from './pages/Dashboard';
+import ManageTrackables from './pages/ManageTrackables';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -80,6 +81,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trackables"
+            element={
+              <ProtectedRoute>
+                <ManageTrackables />
               </ProtectedRoute>
             }
           />

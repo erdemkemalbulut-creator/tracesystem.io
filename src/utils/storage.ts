@@ -65,19 +65,16 @@ export const isOnboardingCompleted = (): boolean => {
   return getTraceData().onboarding_completed;
 };
 
-export const getDayNumber = (seasonStartDate?: string): number => {
-  const startStr = seasonStartDate ?? getTraceData().season_start_date;
-  if (!startStr) return 1;
-
-  const start = new Date(startStr);
-  const now = new Date();
-
-  // Compare calendar dates to avoid timezone/DST drift
-  const startDay = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const dayNumber = Math.floor((today - startDay) / 86400000) + 1;
-
-  return Math.max(1, dayNumber);
+/**
+ * Returns the current day number based on completed entries (not calendar days).
+ * Day = number of saved entries + 1 (for today), capped at 30.
+ */
+export const getDayNumber = (_seasonStartDate?: string): number => {
+  const data = getTraceData();
+  const entries = data.daily_entries || {};
+  const completedCount = Object.values(entries).filter(e => e.saved_at).length;
+  // Next day to fill = completedCount + 1, capped at 30
+  return Math.min(completedCount + 1, 30);
 };
 
 export const getDailyEntry = (dayNumber: number): DailyEntry | undefined => {

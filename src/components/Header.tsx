@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { HeaderIcons } from '../ui/icons';
+import { getDayNumber } from '../utils/storage';
 
 interface HeaderProps {
   variant?: 'website' | 'system';
@@ -166,21 +167,6 @@ function Header({
       </div>
     </header>
   );
-}
-
-function getDayNumber(): number {
-  const startDateStr = localStorage.getItem('traceStartDate');
-  if (!startDateStr) return 1;
-
-  const startDate = new Date(startDateStr);
-  const today = new Date();
-  startDate.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-
-  const diffTime = today.getTime() - startDate.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  return diffDays + 1;
 }
 
 export default Header;
