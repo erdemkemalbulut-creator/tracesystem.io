@@ -277,37 +277,39 @@ export default function Settings() {
         {notifSupported && (
           <div className="settings-section" style={{ marginTop: '4rem' }}>
             <h2>Notifications</h2>
-            {!notifEnabled ? (
-              <div>
-                <p className="completion-tip" style={{ marginBottom: '0.75rem' }}>
-                  Get daily reminders and streak alerts.
-                </p>
-                <button className="primary" onClick={handleEnableNotifications}>
-                  Enable notifications
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                  <span style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)' }}>Daily reminder</span>
-                  <input
-                    type="checkbox"
-                    checked={remindersOn}
-                    onChange={(e) => handleToggleReminders(e.target.checked)}
-                    style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
-                  />
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                  <span style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)' }}>Streak alerts</span>
-                  <input
-                    type="checkbox"
-                    checked={streakAlertsOn}
-                    onChange={(e) => handleToggleStreakAlerts(e.target.checked)}
-                    style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
-                  />
-                </label>
-              </div>
-            )}
+            <div className="glass-card">
+              {!notifEnabled ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <p className="completion-tip" style={{ margin: 0 }}>
+                    Get daily reminders and streak alerts.
+                  </p>
+                  <button className="primary" onClick={handleEnableNotifications}>
+                    Enable notifications
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)' }}>Daily reminder</span>
+                    <input
+                      type="checkbox"
+                      checked={remindersOn}
+                      onChange={(e) => handleToggleReminders(e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)' }}>Streak alerts</span>
+                    <input
+                      type="checkbox"
+                      checked={streakAlertsOn}
+                      onChange={(e) => handleToggleStreakAlerts(e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

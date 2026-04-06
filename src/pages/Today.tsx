@@ -233,38 +233,17 @@ export default function Today() {
     }, 600);
   };
 
-  // Loading states
-  if (checkingCheckpoints || trackablesLoading) {
-    return (
-      <div className="page">
-        <div className="skeleton-group" style={{ maxWidth: 560, paddingTop: '2rem' }}>
-          <SkeletonLine width="120px" height="1.5rem" />
-          <SkeletonLine width="80%" />
-          <SkeletonBlock height="100px" />
-          <SkeletonLine width="60%" />
-          <SkeletonBlock height="140px" />
-        </div>
-      </div>
-    );
-  }
-
-  // Checkpoint screens
-  if (shouldShowDay30) return <Day30Closure />;
-  if (shouldShowDay7) return <Day7Reflection />;
-  if (shouldShowDay14) return <Day14Checkpoint />;
-  if (shouldShowDay21) return <Day21Checkpoint />;
-
-  // Day already saved
+  // If today is already saved, show completion immediately (no loading needed)
   if (isDaySaved) {
     return (
       <div className="page-with-shell reflective-bg">
         <Header variant="system" />
         <PageTransition>
         <div className="page">
-          <div className="completion-container" style={{ alignItems: 'center', textAlign: 'center' }}>
+          <div className="today-container" style={{ alignItems: 'center', textAlign: 'center' }}>
             <ProgressRing current={dayNumber} total={30} size={100} label="/ 30" />
 
-            <div className="completion-section">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <h1>Today is complete.</h1>
               <span className="today-phase-name">{PHASE_LABELS[currentPhaseIndex]} phase</span>
             </div>
@@ -281,27 +260,55 @@ export default function Today() {
               ))}
             </div>
 
-            <div className="completion-section">
-              <p className="completion-body">The system will open again in:</p>
-              <p className="completion-body" style={{ fontSize: '1.75rem', fontWeight: '600', marginTop: '0.5rem', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
-                {timeUntilNext}
-              </p>
-              <p className="completion-tip" style={{ marginTop: '1rem' }}>
-                One entry per day. Nothing more is expected.
+            <div className="glass-card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem 0' }}>Opens again in</p>
+              <p style={{ fontSize: '2rem', fontWeight: '600', fontFamily: 'monospace', letterSpacing: '0.05em', color: 'var(--color-text-primary)', margin: 0 }}>
+                {timeUntilNext || '--:--:--'}
               </p>
             </div>
 
-            <Link to={`/day/${dayNumber}`}>
-              <button className="primary completion-primary">
-                Review today's entry
-              </button>
-            </Link>
+            <p className="meta-text">One entry per day. Nothing more is expected.</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+              <Link to={`/day/${dayNumber}`} style={{ textDecoration: 'none' }}>
+                <button className="primary" style={{ width: '100%' }}>
+                  Review today's entry
+                </button>
+              </Link>
+              <Link to="/dashboard" style={{ textDecoration: 'none', textAlign: 'center' }}>
+                <span className="text-link">View dashboard</span>
+              </Link>
+            </div>
           </div>
         </div>
         </PageTransition>
       </div>
     );
   }
+
+  // Loading states (only shown when day is NOT saved)
+  if (checkingCheckpoints || trackablesLoading) {
+    return (
+      <div className="page-with-shell reflective-bg">
+        <Header variant="system" />
+        <div className="page">
+          <div className="skeleton-group" style={{ maxWidth: 560, paddingTop: '2rem' }}>
+            <SkeletonLine width="120px" height="1.5rem" />
+            <SkeletonLine width="80%" />
+            <SkeletonBlock height="100px" />
+            <SkeletonLine width="60%" />
+            <SkeletonBlock height="140px" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Checkpoint screens
+  if (shouldShowDay30) return <Day30Closure />;
+  if (shouldShowDay7) return <Day7Reflection />;
+  if (shouldShowDay14) return <Day14Checkpoint />;
+  if (shouldShowDay21) return <Day21Checkpoint />;
 
   // Main check-in form
   return (
