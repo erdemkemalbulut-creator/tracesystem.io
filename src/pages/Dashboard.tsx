@@ -27,7 +27,7 @@ const PHASE_RANGES = [
 ];
 
 // Badge definitions
-function computeBadges(entries: EntryData[], currentStreak: number, maxStreak: number) {
+function computeBadges(entries: EntryData[], _currentStreak: number, maxStreak: number) {
   const badges: { icon: typeof Flame; label: string; earned: boolean }[] = [
     { icon: Flame, label: '3-day streak', earned: maxStreak >= 3 },
     { icon: Flame, label: '7-day streak', earned: maxStreak >= 7 },
